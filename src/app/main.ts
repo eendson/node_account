@@ -6,7 +6,7 @@ const createService = new CreateAccountService();
 
 operation()
 
-function operation() {
+export function operation() {
 
     inquirer.prompt([
         {
@@ -26,7 +26,7 @@ function operation() {
         const action = resp['action'];
         
         if(action ===  'Criar Conta') {
-            createService.startCreateAccount();
+            createService.startCreateAccount(operation);
         
         }else if(action ===  'Consultar Saldo') {
             

@@ -5,19 +5,17 @@ import fs from 'fs';
 
 export default class CreateAccountService {
 
-    constructor(){ 
-        
-    }
+    constructor() { }
 
-    startCreateAccount(){
+    startCreateAccount(operation:()=> void): void{
  
         console.log(chalk.bgGreen.black('Obrigado por escolher nosso banco!'));
         console.log(chalk.green('Vamos definir as opções da sua conta a seguir:'));
     
-        this.setOptionsAccount()
+        this.setOptionsAccount(operation)
     }
     
-    setOptionsAccount() {
+    setOptionsAccount(operation:()=> void): void {
     
         inquirer.prompt([
             {
@@ -27,35 +25,47 @@ export default class CreateAccountService {
             },
             {
                 name: 'cpfAccount',
-                type: 'string',
+                type: 'number',
                 message: 'Digite seu cpf (apenas números): '
             },
-            // {
-            //     name: 'addressAccount',
-            //     type: 'string',
-            //     message: 'Digite seu endereço: '
-            // },
-            // {
-            //     name: 'cardAccount',
-            //     type: 'checkbox',
-            //     message: 'Deseja solicitar cartão de crédito? ',
-            //     choices: [
-            //         { name: 'Sim?', value: 'true' },
-            //         { name: 'Não?', value: 'false' },
-            //       ]
-            // }
+            {
+                name: 'addressAccount',
+                type: 'string',
+                message: 'Digite seu endereço: '
+            },
+            {
+                name: 'cardAccount',
+                type: 'checkbox',
+                message: 'Deseja solicitar cartão de crédito? ',
+                choices: [
+                    { name: 'Sim?', value: 'true' },
+                    { name: 'Não?', value: 'false' },
+                  ]
+            }
         ])
         .then((resp)=>{
             const accountName = resp['accountName'];
             const cpfAccount = resp['cpfAccount'];
             const addressAccount = resp['addressAccount'];
             const cardAccount = resp['cardAccount'];
-    
-            if(!fs.existsSync('list_accounts')){
-                fs.mkdirSync('list_accounts');
+
+            if(Number.isNaN(cpfAccount) == true) {
+                console.log(chalk.bgRed.white('O cpf digitado não é um número!'))
+                this.setOptionsAccount(operation);
+                return;
+            }
+
+            if(cpfAccount.toString().length != 10) {
+                console.log(chalk.bgRed.white('A quantidade de carcteres não correspondem a um cpf válido!'))
+                this.setOptionsAccount(operation);
+                return;
+            }
+
+            if(!fs.existsSync('./src/app/list_accounts')){
+                fs.mkdirSync('./src/app/list_accounts');
             }
     
-            if(fs.existsSync(`list_accounts/${cpfAccount}.json`)){
+            if(fs.existsSync(`./src/app/list_accounts/${cpfAccount}.json`)){
                 console.log(
                     chalk.bgRed.white(
                         `
@@ -64,15 +74,14 @@ export default class CreateAccountService {
                         `
                     )
                 )
-                this.setOptionsAccount();
+                this.setOptionsAccount(operation);
                 return;
             }
             try {
-                fs.writeFileSync(`list_accounts/${cpfAccount}.json`, `{"Nome do Titular": "${accountName}", "saldo": 0, "cpf": "${cpfAccount}", "cartão de crédito": ${cardAccount}, "endereço":"${addressAccount}"}`)
-            
-                console.log(' ');
-                console.log('----------------------------------');
-                //operation();
+                fs.writeFileSync(`./src/app/list_accounts/${cpfAccount}.json`, `{"Nome do Titular": "${accountName}", "saldo": 0, "cpf": "${cpfAccount}", "cartão de crédito": ${cardAccount}, "endereço":"${addressAccount}"}`)
+                console.log(chalk.bgBlue.white.bold('\nSua conta foi criada com sucesso!\n'))
+                operation();
+
               } catch(err) {
                 console.error(err);
               }
