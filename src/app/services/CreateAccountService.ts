@@ -2,6 +2,8 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import fs from 'fs';
 
+import { checkCpf } from '../helpers/checkCpf';
+
 
 export default class CreateAccountService {
 
@@ -12,7 +14,9 @@ export default class CreateAccountService {
         console.log(chalk.bgGreen.black('Obrigado por escolher nosso banco!'));
         console.log(chalk.green('Vamos definir as opções da sua conta a seguir:'));
     
-        this.setOptionsAccount(operation)
+        setTimeout(()=>{
+            this.setOptionsAccount(operation)
+        },2000)
     }
     
     setOptionsAccount(operation:()=> void): void {
@@ -25,7 +29,7 @@ export default class CreateAccountService {
             },
             {
                 name: 'cpfAccount',
-                type: 'number',
+                type: 'string',
                 message: 'Digite seu cpf (apenas números): '
             },
             {
@@ -44,47 +48,48 @@ export default class CreateAccountService {
             }
         ])
         .then((resp)=>{
-            const accountName = resp['accountName'];
-            const cpfAccount = resp['cpfAccount'];
+            const accountNameCreate = resp['accountName'];
+            const cpfAccountCreate = resp['cpfAccount'];
             const addressAccount = resp['addressAccount'];
             const cardAccount = resp['cardAccount'];
 
-            if(Number.isNaN(cpfAccount) == true) {
-                console.log(chalk.bgRed.white('O cpf digitado não é um número!'))
-                this.setOptionsAccount(operation);
+            if(!checkCpf(cpfAccountCreate)){
+                setTimeout(()=>{
+                    this.setOptionsAccount(operation)
+                },1500)
                 return;
             }
-
-            if(cpfAccount.toString().length != 10) {
-                console.log(chalk.bgRed.white('A quantidade de carcteres não correspondem a um cpf válido!'))
-                this.setOptionsAccount(operation);
-                return;
-            }
-
+            
             if(!fs.existsSync('./src/app/list_accounts')){
                 fs.mkdirSync('./src/app/list_accounts');
             }
     
-            if(fs.existsSync(`./src/app/list_accounts/${cpfAccount}.json`)){
+            if(fs.existsSync(`./src/app/list_accounts/${cpfAccountCreate}.json`)){
                 console.log(
                     chalk.bgRed.white(
                         `
-                            O cpf ${cpfAccount} já consta em nosso registro como cliente do banco. 
+                            O cpf ${cpfAccountCreate} já consta em nosso registro como cliente do banco. 
                             Por favor verifique se você digitou o número correto.
                         `
                     )
                 )
-                this.setOptionsAccount(operation);
+                setTimeout(()=>{
+                    this.setOptionsAccount(operation)
+                },1500)
                 return;
             }
-            try {
-                fs.writeFileSync(`./src/app/list_accounts/${cpfAccount}.json`, `{"Nome do Titular": "${accountName}", "saldo": 0, "cpf": "${cpfAccount}", "cartão de crédito": ${cardAccount}, "endereço":"${addressAccount}"}`)
-                console.log(chalk.bgBlue.white.bold('\nSua conta foi criada com sucesso!\n'))
-                operation();
 
-              } catch(err) {
-                console.error(err);
-              }
+            try {
+                fs.writeFileSync(`./src/app/list_accounts/${cpfAccountCreate}.json`, `{"Nome do Titular": "${accountNameCreate}", "balance": 0, "cpf": "${cpfAccountCreate}", "cartão de crédito": ${cardAccount}, "endereço":"${addressAccount}"}`)
+                console.log(chalk.bgBlue.white.bold('\nSua conta foi criada com sucesso!\n'))
+                
+                setTimeout(()=>{
+                    operation();
+                },1500)
+
+            } catch(err) {
+            console.error(err);
+            }
 
         })
         .catch((err)=>console.log(err));
